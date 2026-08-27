@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Nullable>disable</Nullable>
+    <AssemblyName>UORegionServer</AssemblyName>
+    <RootNamespace>UORegionEditor</RootNamespace>
+    <Version>0.8.8</Version>
+    <Product>UORegionServer</Product>
+    <AssemblyTitle>UO Region Editor Server</AssemblyTitle>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Description>Multi-user region server for UORegionEditor (Sphere AREADEF + CentrED regions).</Description>
+    <Authors>chemist</Authors>
+    <Company>chemist</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Model.cs" Link="Model.cs" />
+    <Compile Include="..\Protocol.cs" Link="Protocol.cs" />
+    <Compile Include="..\ServerCore.cs" Link="ServerCore.cs" />
+    <Compile Include="..\SphereScp.cs" Link="SphereScp.cs" />
+    <Compile Include="..\CentredXml.cs" Link="CentredXml.cs" />
+    <Compile Include="..\ServuoXml.cs" Link="ServuoXml.cs" />
+  </ItemGroup>
+
+</Project>

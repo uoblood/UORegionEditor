@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Server/">
+    <Project Path="Server/UORegionEditor.Server.csproj" />
+  </Folder>
+  <Project Path="UORegionEditor.csproj" />
+</Solution>

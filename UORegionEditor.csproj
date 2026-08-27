@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- English only: drops 13 localized resource folders from the published output -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>UORegionEditor</AssemblyName>
+    <Version>0.8.8</Version>
+    <Product>UORegionEditor</Product>
+    <Authors>chemist</Authors>
+    <Company>chemist</Company>
+    <Description>Visual region editor for Sphere AREADEF/ROOMDEF scripts, CentrED cedserver.xml and ServUO Regions.xml.</Description>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="icon32.png" />
+    <EmbeddedResource Include="icon128.png" />
+    <EmbeddedResource Include="logo512.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Server\**" />
+    <None Remove="Server\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ClassicUO.Assets"><HintPath>lib\ClassicUO.Assets.dll</HintPath></Reference>
+    <Reference Include="ClassicUO.IO"><HintPath>lib\ClassicUO.IO.dll</HintPath></Reference>
+    <Reference Include="ClassicUO.Utility"><HintPath>lib\ClassicUO.Utility.dll</HintPath></Reference>
+    <None Include="lib\*.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silk.NET.Input" Version="2.23.0" />
+    <PackageReference Include="Silk.NET.OpenGL" Version="2.23.0" />
+    <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.23.0" />
+    <PackageReference Include="Silk.NET.Windowing" Version="2.23.0" />
+  </ItemGroup>
+
+</Project>
