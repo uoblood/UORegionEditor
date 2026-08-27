@@ -13,8 +13,8 @@
 </p>
 
 Draw regions straight on the world map and export them as **Sphere** `AREADEF`/`ROOMDEF`,
-**CentrED** `cedserver.xml` or **ServUO** `Regions.xml` — the exclusive/inclusive edge
-conventions are handled for you.
+**CentrED** `cedserver.xml`, **ServUO** `Regions.xml` or **ModernUO** `regions.json` — the
+exclusive/inclusive edge conventions are handled for you.
 
 <p align="center">
   <img src="docs/screenshot-start.png" width="720" alt="UORegionEditor">
@@ -60,7 +60,8 @@ Everything is undoable (`Ctrl+Z` / `Ctrl+Y`, or the History window).
 - **Sphere `.scp`** — right/bottom edges written exclusive (+1), as Sphere expects
 - **CentrED xml** and **Merge cedserver...** — inclusive edges; merging replaces same-name
   regions and preserves the rest, with a timestamped `.bak` (stop the CentrED server first)
-- **ServUO `Regions.xml`**
+- **ServUO `Regions.xml`** — region class, priority and music
+- **ModernUO `regions.json`** — same fields; edges written exclusive, as ModernUO expects
 - **Map image (PNG)** — a shareable player map: every visible region as one silhouette in
   its own colour, with labels
 
@@ -68,12 +69,14 @@ Everything is undoable (`Ctrl+Z` / `Ctrl+Y`, or the History window).
   <img src="docs/region-map.png" width="560" alt="Region map exported as a PNG">
 </p>
 
-Import reads existing `.scp`, CentrED and ServUO files back in.
+Import reads all four back in, so moving a shard from one server to another is an import
+and an export.
 
 **Editing for** picks the server your shard runs, and the region panel then asks only for
-that server's fields — Sphere events, flags and groups, or a ServUO region class, priority
-and music. It sits in the connect dialog (saved per profile) and in **Options** for offline
-work. Every format still exports whichever you pick.
+that server's fields — Sphere events, flags and groups, or a region class, priority and
+music for ServUO/ModernUO. It sits in the connect dialog (saved per profile) and in
+**Options** for offline work, and marks its format in the Import/Export menus. Every
+format stays available whichever you pick.
 
 ## Why it exists
 

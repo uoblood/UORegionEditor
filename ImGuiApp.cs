@@ -162,17 +162,22 @@ public partial class ImGuiApp
     // region class and back. Every field is still stored, synced and exported whatever
     // is selected here - switching target hides fields, it never clears them.
     // plain "CentrED": CentrED+ and CentrED# both read the same cedserver.xml regions
-    static readonly string[] TargetNames = { "Sphere", "ServUO", "CentrED" };
+    // ONE list. The connect dialog and Options both render it through TargetCombo, so a
+    // new server goes in here and shows up in both - never add a second copy.
+    static readonly string[] TargetNames = { "Sphere", "ServUO", "CentrED", "ModernUO" };
     static readonly string[] TargetInfo =
     {
         "AREADEF/ROOMDEF with events, flags and groups",
         "Regions.xml with a region class, priority and music",
         "cedserver.xml regions - name and boxes only",
+        "regions.json with a region class, priority and music",
     };
     int scriptTarget;             // index into TargetNames; 0 = Sphere
     int cTarget;                  // the same, being edited in the connect dialog
     bool TargetSphere => scriptTarget == 0;
-    bool TargetServuo => scriptTarget == 1;
+    // ServUO and ModernUO are the same region model ($type/priority/music), just a
+    // different file format, so they show the same fields
+    bool TargetServuo => scriptTarget is 1 or 3;
 
     static string TargetName(int i) => TargetNames[Math.Clamp(i, 0, TargetNames.Length - 1)];
 
@@ -182,6 +187,8 @@ public partial class ImGuiApp
     {
         if (string.IsNullOrWhiteSpace(s)) return 0;
         s = s.Trim();
+        // ModernUO before ServUO: "ModernUO" must not be caught by a loose ServUO match
+        if (s.StartsWith("ModernUO", StringComparison.OrdinalIgnoreCase)) return 3;
         if (s.StartsWith("ServUO", StringComparison.OrdinalIgnoreCase)) return 1;
         if (s.StartsWith("CentrED", StringComparison.OrdinalIgnoreCase)) return 2;
         return 0;

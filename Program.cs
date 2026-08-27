@@ -399,12 +399,32 @@ static class Program
                     srvBack[0].Priority == 75 && srvBack[0].Music == "Britain1",
                     srvBack.Count == 0 ? "no regions" : $"type={srvBack[0].ServuoType} prio={srvBack[0].Priority} music={srvBack[0].Music}");
 
+                // ModernUO json: x2/y2 are EXCLUSIVE (Rectangle2D.Contains tests _end.X > x),
+                // so a 50..70 inclusive rect must be written as x2=71 and read back as 70
+                var m = new RegionDef { DefName = "A_MUO", Name = "Muo Town", MapPlane = 1, PX = 100, PY = 110, PZ = 5 };
+                m.Rects.Add(new RegionRect(50, 60, 70, 80));
+                m.ServuoType = "TownRegion"; m.Priority = 75; m.Music = "Britain1";
+                var mjson = ModernUoJson.Export(new[] { m });
+                var mBack = ModernUoJson.Import(mjson);
+                Check("modernuo json exclusive edges",
+                    mjson.Contains("\"x2\": 71") && mjson.Contains("\"y2\": 81"),
+                    mjson.Split('\n').FirstOrDefault(l => l.Contains("\"x2\""))?.Trim() ?? "no rect");
+                Check("modernuo json round-trip",
+                    mBack.Count == 1 && mBack[0].Rects.Count == 1 &&
+                    mBack[0].Rects[0].X1 == 50 && mBack[0].Rects[0].Y1 == 60 &&
+                    mBack[0].Rects[0].X2 == 70 && mBack[0].Rects[0].Y2 == 80 &&
+                    mBack[0].Name == "Muo Town" && mBack[0].MapPlane == 1 &&
+                    mBack[0].ServuoType == "TownRegion" && mBack[0].Priority == 75 &&
+                    mBack[0].Music == "Britain1" && mBack[0].PX == 100 && mBack[0].PZ == 5,
+                    mBack.Count == 0 ? "no regions" : $"{mBack[0].Rects[0]} map={mBack[0].MapPlane} type={mBack[0].ServuoType}");
+
                 // profiles saved before the shard setting existed have no Target at all,
                 // and those are Sphere shards - they must not land on ServUO
                 Check("shard target from profile name",
                     ImGuiApp.TargetFromName(null) == 0 && ImGuiApp.TargetFromName("") == 0 &&
                     ImGuiApp.TargetFromName("Sphere") == 0 && ImGuiApp.TargetFromName("servuo") == 1 &&
-                    ImGuiApp.TargetFromName("CentrED+") == 2 && ImGuiApp.TargetFromName("whatever") == 0);
+                    ImGuiApp.TargetFromName("CentrED+") == 2 && ImGuiApp.TargetFromName("whatever") == 0 &&
+                    ImGuiApp.TargetFromName("ModernUO") == 3 && ImGuiApp.TargetFromName("modernuo") == 3);
             }
 
             // 8b. RegionOps: lasso fill, mask->rect decomposition, box/mask subtraction

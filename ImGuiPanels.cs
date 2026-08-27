@@ -284,21 +284,30 @@ public partial class ImGuiApp
             // bulk imports dump many regions onto the server at once - same overwrite
             // risk the first-sync gate closes, so while connected they are root-only
             bool canImport = net is not { Connected: true } || net.Access >= 255;
-            if (ImGui.MenuItem("Import Sphere .scp...", null, false, canImport)) ImportScp();
-            if (!canImport && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                ImGui.SetTooltip("root only while connected");
-            if (ImGui.MenuItem("Import CentrED xml...", null, false, canImport)) ImportCentred();
-            if (!canImport && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                ImGui.SetTooltip("root only while connected");
-            if (ImGui.MenuItem("Import ServUO Regions.xml...", null, false, canImport)) ImportServuo();
-            if (!canImport && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                ImGui.SetTooltip("root only while connected");
-            ImGui.Separator();
-            if (ImGui.MenuItem("Export Sphere .scp...")) ExportSphere();
-            if (ImGui.MenuItem("Export CentrED xml...")) ExportCentred();
-            if (ImGui.MenuItem("Export ServUO Regions.xml...")) ExportServuo();
+            // Four formats each way was eleven flat entries. Grouped into submenus, with
+            // the one matching "Editing for" marked - importing one server's regions and
+            // exporting another's is a feature, so nothing is hidden by target.
+            if (ImGui.BeginMenu("Import"))
+            {
+                FormatItem("Sphere .scp...", 0, canImport, ImportScp);
+                FormatItem("CentrED xml...", 2, canImport, ImportCentred);
+                FormatItem("ServUO Regions.xml...", 1, canImport, ImportServuo);
+                FormatItem("ModernUO regions.json...", 3, canImport, ImportModernUo);
+                ImGui.EndMenu();
+            }
+            if (ImGui.BeginMenu("Export"))
+            {
+                FormatItem("Sphere .scp...", 0, true, ExportSphere);
+                FormatItem("CentrED xml...", 2, true, ExportCentred);
+                FormatItem("ServUO Regions.xml...", 1, true, ExportServuo);
+                FormatItem("ModernUO regions.json...", 3, true, ExportModernUo);
+                ImGui.Separator();
+                if (ImGui.MenuItem("Merge into cedserver.xml...")) MergeCentred();
+                if (ImGui.IsItemHovered()) TooltipLines("Replace same-name regions in a live config");
+                ImGui.EndMenu();
+            }
+            // not a region format - a picture for your players, so it stands on its own
             if (ImGui.MenuItem("Export map image (PNG)...")) exportDialogOpen = true;
-            if (ImGui.MenuItem("Merge into cedserver.xml...")) MergeCentred();
             ImGui.Separator();
             if (ImGui.MenuItem("Muls folder...")) PickMuls();
             ImGui.Separator();
@@ -569,8 +578,17 @@ public partial class ImGuiApp
         ImGui.Checkbox("Don't overlap other regions", ref avoidOverlap);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Stop at other visible regions.\nHide one to draw through it.");
-        bool plusOne = project.SphereExclusiveEdge;
-        if (ImGui.Checkbox("Sphere +1 edge", ref plusOne)) project.SphereExclusiveEdge = plusOne;
+        // only the Sphere exporter/importer reads this, so it is noise on any other shard.
+        // The value is left alone when hidden - switching target must not silently flip a
+        // setting someone turned off on purpose, and it defaults on, which is correct for
+        // a stock Sphere script even if you export .scp while editing for another server.
+        if (TargetSphere)
+        {
+            bool plusOne = project.SphereExclusiveEdge;
+            if (ImGui.Checkbox("Sphere +1 edge", ref plusOne)) project.SphereExclusiveEdge = plusOne;
+            if (ImGui.IsItemHovered())
+                TooltipLines("Right/bottom edges written exclusive", "off only for scripts that break the convention");
+        }
 
         bool det = detailMode;
         if (ImGui.Checkbox("CentrED view", ref det))
@@ -898,6 +916,7 @@ public partial class ImGuiApp
         }
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Fewer boxes, same tiles");
+
         ImGui.End();
     }
 
@@ -1385,6 +1404,44 @@ public partial class ImGuiApp
             status = $"Imported {regs.Count} ServUO region(s) ({regs.Sum(r => r.Rects.Count)} boxes).";
         }
         catch (Exception ex) { status = "ServUO import failed: " + ex.Message; }
+    }
+
+    // One row in the Import/Export submenus. The format matching "Editing for" gets a
+    // note in the shortcut column so the right one is obvious without hiding the rest.
+    void FormatItem(string label, int target, bool enabled, Action act)
+    {
+        if (ImGui.MenuItem(label, scriptTarget == target ? "your shard" : "", false, enabled)) act();
+        if (!enabled && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("root only while connected");
+    }
+
+    void ImportModernUo()
+    {
+        using var dlg = new OpenFileDialog { Filter = "ModernUO regions.json|*.json|All files|*.*" };
+        if (dlg.ShowDialog() != DialogResult.OK) return;
+        try
+        {
+            var list = ModernUoJson.Import(File.ReadAllText(dlg.FileName));
+            if (list.Count == 0) { status = "No regions found in that file."; return; }
+            undoMgr.Snapshot($"import {Path.GetFileName(dlg.FileName)}", project, list);
+            project.Regions.AddRange(list);
+            foreach (var r in list) MarkDirty(r);
+            status = $"Imported {list.Count} regions from ModernUO json.";
+        }
+        catch (Exception ex) { status = "Import failed: " + ex.Message; }
+    }
+
+    void ExportModernUo()
+    {
+        if (project.Regions.Count == 0) { status = "Nothing to export."; return; }
+        using var dlg = new SaveFileDialog { Filter = "ModernUO regions.json|*.json", FileName = "regions.json" };
+        if (dlg.ShowDialog() != DialogResult.OK) return;
+        try
+        {
+            File.WriteAllText(dlg.FileName, ModernUoJson.Export(project.Regions), new UTF8Encoding(false));
+            status = "Exported ModernUO regions.json - merge into Distribution/Data/regions.json.";
+        }
+        catch (Exception ex) { status = "Export failed: " + ex.Message; }
     }
 
     void ExportServuo()
