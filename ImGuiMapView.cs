@@ -116,6 +116,9 @@ public partial class ImGuiApp
     (int x, int y) wandHoverTile = (-1, -1);            // last MAP tile hovered (frozen while over UI)
     (int x, int y) wandDragSeed;                        // press tile while sizing the radius
     int wandRadius;                                     // 0 = unlimited (plain click)
+    bool wandFillGaps = true;                          // close grass gaps inside a forest
+    int wandMaxGap = 64;                               // per gap, in tiles; 0 = no limit
+    int wandGapsFilled;                                // last fill, for the status line
     List<RegionRect> wandRects;                         // cached MaskToRects of wandMask
     bool wandOverflow;
     string wandSig = "";                                // seed+params the cached preview was computed for
@@ -240,7 +243,18 @@ public partial class ImGuiApp
                 colorAt = (x, y) => idx.Occupied(x, y) ? WandHidden : inner(x, y);
             }
         }
-        return RegionOps.WandFill(seed, mapW, mapH, colorAt, WandEffTolerance, WandMaxTiles, out overflow, wandRadius);
+        var mask = RegionOps.WandFill(seed, mapW, mapH, colorAt, WandEffTolerance, WandMaxTiles, out overflow, wandRadius);
+        // A forest matches as trees, so grass clearings inside it come back as holes and
+        // punch through the region. Close the enclosed ones; the outer shape is untouched.
+        // Not applied when erasing - an eraser is meant to leave what it did not cut.
+        if (wandFillGaps && !erase && mask.Count > 0)
+        {
+            int filled = RegionOps.FillGaps(mask, wandMaxGap);
+            wandGapsFilled = filled;                     // reported in the commit status
+            if (filled > 0 && mask.Count > WandMaxTiles) overflow = true;
+        }
+        else wandGapsFilled = 0;
+        return mask;
     }
 
     // click: fill from the tile and commit as boxes (or cut them from the selected region)
@@ -284,6 +298,9 @@ public partial class ImGuiApp
                 return;
             }
             CommitMaskAdd(mask, "quick select");
+            // say so when gaps were closed, otherwise the tile count looks wrong
+            if (wandGapsFilled > 0) status += $"  (+{wandGapsFilled:N0} tiles in filled gaps)";
+            else if (wandGapsFilled < 0) status += "  (area too large to fill gaps)";
         }
         ClearWandPreview();   // the region under the preview changed: recompute next frame
     }

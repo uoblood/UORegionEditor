@@ -8,7 +8,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>UORegionServer</AssemblyName>
     <RootNamespace>UORegionEditor</RootNamespace>
-    <Version>0.8.9</Version>
+    <Version>0.8.10</Version>
     <Product>UORegionServer</Product>
     <AssemblyTitle>UO Region Editor Server</AssemblyTitle>
     <ApplicationIcon>app.ico</ApplicationIcon>

@@ -10,7 +10,7 @@
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>UORegionEditor</AssemblyName>
-    <Version>0.8.9</Version>
+    <Version>0.8.10</Version>
     <Product>UORegionEditor</Product>
     <Authors>chemist</Authors>
     <Company>chemist</Company>

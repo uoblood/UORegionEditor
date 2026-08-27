@@ -427,6 +427,45 @@ static class Program
                     ImGuiApp.TargetFromName("ModernUO") == 3 && ImGuiApp.TargetFromName("modernuo") == 3);
             }
 
+            // 8c. RegionOps.FillGaps: grass gaps inside a wand-selected forest
+            {
+                // a solid block with two small gaps punched in it
+                var forest = RegionOps.Coverage(new[] { new RegionRect(0, 0, 19, 19) });
+                forest.Remove((5, 5));
+                forest.Remove((6, 5));
+                forest.Remove((12, 14));
+                int addedTiles = RegionOps.FillGaps(forest, 0);
+                Check("enclosed gaps are filled", addedTiles == 3 && forest.Count == 400, $"added {addedTiles}");
+
+                // a bite out of the EDGE reaches the outside, so it is not a hole
+                var bitten = RegionOps.Coverage(new[] { new RegionRect(0, 0, 19, 19) });
+                bitten.Remove((0, 10)); bitten.Remove((1, 10));
+                Check("edge notches are left alone", RegionOps.FillGaps(bitten, 0) == 0);
+
+                // a clearing bigger than the cap stays open; the small gap next to it fills
+                var lake = RegionOps.Coverage(new[] { new RegionRect(0, 0, 29, 29) });
+                for (int y = 4; y <= 12; y++)
+                    for (int x = 4; x <= 12; x++) lake.Remove((x, y));   // 81-tile clearing
+                lake.Remove((20, 20));
+                int cappedAdd = RegionOps.FillGaps(lake, 16);
+                Check("big clearing survives the cap, small gap fills",
+                    cappedAdd == 1 && !lake.Contains((8, 8)) && lake.Contains((20, 20)), $"added {cappedAdd}");
+
+                // a gap connected to the outside by a one-tile channel is not enclosed
+                var channel = RegionOps.Coverage(new[] { new RegionRect(0, 0, 19, 19) });
+                for (int y = 5; y <= 8; y++)
+                    for (int x = 5; x <= 8; x++) channel.Remove((x, y));
+                for (int x = 0; x <= 4; x++) channel.Remove((x, 6));     // cut out to the west edge
+                Check("gap with a channel to the outside is not filled", RegionOps.FillGaps(channel, 0) == 0);
+
+                // the outer shape must never change
+                var ring = RegionOps.Coverage(new[] { new RegionRect(0, 0, 9, 9) });
+                ring.Remove((4, 4));
+                RegionOps.FillGaps(ring, 0);
+                Check("outer bounds unchanged by gap filling",
+                    ring.Count == 100 && !ring.Contains((-1, -1)) && !ring.Contains((10, 10)));
+            }
+
             // 8b. RegionOps: lasso fill, mask->rect decomposition, box/mask subtraction
             {
                 var sq = new List<(int x, int y)>();

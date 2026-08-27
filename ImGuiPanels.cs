@@ -572,6 +572,16 @@ public partial class ImGuiApp
             ImGui.Combo("Match", ref wandMatch, "Land color\0Surface color\0Tile type\0");
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("What counts as matching.\nAll modes follow the Z filter.");
+            ImGui.Checkbox("Fill gaps", ref wandFillGaps);
+            if (ImGui.IsItemHovered())
+                TooltipLines("Take the gaps inside the selection too", "grass clearings in a forest");
+            if (wandFillGaps)
+            {
+                ImGui.SetNextItemWidth(140);
+                ImGui.SliderInt("Max gap", ref wandMaxGap, 0, 512, wandMaxGap == 0 ? "any size" : "%d tiles");
+                if (ImGui.IsItemHovered())
+                    TooltipLines("Bigger gaps are left open", "so a real clearing survives");
+            }
             ImGui.Separator();
         }
         ImGui.Checkbox("Add to selected region", ref addToSelected);

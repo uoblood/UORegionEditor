@@ -353,6 +353,80 @@ public static class RegionOps
         return res;
     }
 
+    // A wand fill matches by colour, so anything that does not match stays out - grass
+    // clearings inside a forest come back as holes and punch through the region. This
+    // fills the gaps that are fully ENCLOSED by the selection, leaving the outer shape
+    // exactly as it was.
+    //
+    // How: flood the outside through non-selected tiles, starting from a one-tile ring
+    // around the mask's bounding box. Anything the flood never reaches is enclosed.
+    // maxHole caps each gap so a real lake or clearing is not swallowed (<=0 = no cap).
+    // Returns tiles added, or -1 if the bounding box was too large to scan.
+    public static int FillGaps(HashSet<(int x, int y)> mask, int maxHole, long areaBudget = 8_000_000)
+    {
+        if (mask == null || mask.Count == 0) return 0;
+        int x0 = int.MaxValue, y0 = int.MaxValue, x1 = int.MinValue, y1 = int.MinValue;
+        foreach (var (x, y) in mask)
+        {
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+        }
+        x0--; y0--; x1++; y1++;                       // ring of empty tiles the flood starts from
+        long w = (long)x1 - x0 + 1, h = (long)y1 - y0 + 1;
+        if (w * h > areaBudget) return -1;
+
+        // flood the outside
+        var outside = new HashSet<(int x, int y)>();
+        var q = new Queue<(int x, int y)>();
+        void Seed(int x, int y)
+        {
+            if (x < x0 || y < y0 || x > x1 || y > y1) return;
+            if (mask.Contains((x, y)) || !outside.Add((x, y))) return;
+            q.Enqueue((x, y));
+        }
+        for (int x = x0; x <= x1; x++) { Seed(x, y0); Seed(x, y1); }
+        for (int y = y0; y <= y1; y++) { Seed(x0, y); Seed(x1, y); }
+        while (q.Count > 0)
+        {
+            var (x, y) = q.Dequeue();
+            Seed(x - 1, y); Seed(x + 1, y); Seed(x, y - 1); Seed(x, y + 1);
+        }
+
+        // whatever the flood never reached is an enclosed gap; take them one component at
+        // a time so a single oversized clearing does not disqualify the small ones
+        int added = 0;
+        var done = new HashSet<(int x, int y)>();
+        var comp = new List<(int x, int y)>();
+        var cq = new Queue<(int x, int y)>();
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
+            {
+                var start = (x, y);
+                if (mask.Contains(start) || outside.Contains(start) || !done.Add(start)) continue;
+                comp.Clear();
+                cq.Clear();
+                cq.Enqueue(start);
+                comp.Add(start);
+                while (cq.Count > 0)
+                {
+                    var (cx, cy) = cq.Dequeue();
+                    foreach (var (nx, ny) in new[] { (cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1) })
+                    {
+                        if (nx < x0 || ny < y0 || nx > x1 || ny > y1) continue;
+                        var n = (nx, ny);
+                        if (mask.Contains(n) || outside.Contains(n) || !done.Add(n)) continue;
+                        comp.Add(n);
+                        cq.Enqueue(n);
+                    }
+                }
+                if (maxHole > 0 && comp.Count > maxHole) continue;
+                foreach (var t in comp) if (mask.Add(t)) added++;
+            }
+        return added;
+    }
+
     // All tiles covered by a rect list (selftest helper / coverage checks).
     public static HashSet<(int x, int y)> Coverage(IEnumerable<RegionRect> rects)
     {
