@@ -838,9 +838,14 @@ public partial class ImGuiApp
         }
         else if (TargetServuo)
         {
+            // ServUO and ModernUO share this field but NOT the class list - ModernUO is a
+            // rewrite (BaseRegion, JailRegion...) and ServUO-only classes fail to load there
+            bool muo = scriptTarget == 3;
             PropTextPick("Type", "servuotype", r, () => r.ServuoType, v => r.ServuoType = v,
-                ',', multi: false, () => ServuoXml.RegionTypes);
-            if (ImGui.IsItemHovered()) TooltipLines("Region class ServUO creates", "(blank = plain region)");
+                ',', multi: false, () => muo ? ModernUoJson.RegionTypes : ServuoXml.RegionTypes);
+            if (ImGui.IsItemHovered())
+                TooltipLines(muo ? "Region class ModernUO creates" : "Region class ServUO creates",
+                    muo ? "(blank = BaseRegion)" : "(blank = plain region)");
             int prio = r.Priority;
             ImGui.SetNextItemWidth(90);
             if (ImGui.InputInt("Priority", ref prio, 0))

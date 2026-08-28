@@ -43,7 +43,7 @@ to produce both zips.
 | **Select** `F1` | drag boxes, resize with the handles, arrows nudge (Shift = 8), `Del` removes |
 | **Draw box** `F2` | drag a rectangle, or click two opposite corners |
 | **Lasso** `F3` · **Brush** `F4` | freehand areas |
-| **Quick select** `F5` | click fills every connected matching tile — by colour, or by **Tile type** (its tiledata name), so one click takes a whole cave. Drag to limit the radius. **Fill gaps** takes the clearings inside the selection too, so a forest comes out solid instead of full of grass holes |
+| **Quick select** `F5` | click takes the whole matching area — by colour or **Tile type**. Drag to limit the radius, **Fill gaps** to include clearings inside |
 | **4 corners** `F6` | click corners, `Enter` finishes |
 | `F7`–`F10` | the same four as erasers |
 

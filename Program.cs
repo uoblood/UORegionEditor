@@ -418,6 +418,25 @@ static class Program
                     mBack[0].Music == "Britain1" && mBack[0].PX == 100 && mBack[0].PZ == 5,
                     mBack.Count == 0 ? "no regions" : $"{mBack[0].Rects[0]} map={mBack[0].MapPlane} type={mBack[0].ServuoType}");
 
+                // an untyped region must export ModernUO's own default class. "Region" is
+                // not a ModernUO type and would fail to deserialize; BaseRegion is what
+                // its own regions.json uses for 136 of its regions.
+                var bare = new RegionDef { DefName = "A_BARE", Name = "Bare" };
+                bare.Rects.Add(new RegionRect(1, 1, 2, 2));
+                var bareJson = ModernUoJson.Export(new[] { bare });
+                Check("modernuo untyped region defaults to BaseRegion",
+                    bareJson.Contains("\"$type\": \"BaseRegion\"") && !bareJson.Contains("\"$type\": \"Region\""),
+                    bareJson.Split('\n').FirstOrDefault(l => l.Contains("$type"))?.Trim() ?? "no type");
+
+                // ModernUO is a rewrite: its region classes are not ServUO's, and mixing
+                // them would produce a file its server refuses to load
+                Check("modernuo has its own region class list",
+                    ModernUoJson.RegionTypes.Contains("BaseRegion") &&
+                    ModernUoJson.RegionTypes.Contains("JailRegion") &&
+                    !ModernUoJson.RegionTypes.Contains("MondainRegion") &&
+                    ServuoXml.RegionTypes.Contains("MondainRegion"),
+                    $"{ModernUoJson.RegionTypes.Length} modernuo / {ServuoXml.RegionTypes.Length} servuo");
+
                 // profiles saved before the shard setting existed have no Target at all,
                 // and those are Sphere shards - they must not land on ServUO
                 Check("shard target from profile name",

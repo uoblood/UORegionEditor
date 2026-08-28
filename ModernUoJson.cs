@@ -23,6 +23,19 @@ public static class ModernUoJson
 {
     static readonly string[] Facets = { "Felucca", "Trammel", "Ilshenar", "Malas", "Tokuno", "TerMur" };
 
+    // ModernUO is a rewrite, so its region classes are NOT ServUO's - taken from the
+    // $type values in ModernUO's own Distribution/Data/regions.json, most used first.
+    // Note BaseRegion (the default, and the most common), and that Jail/GreenAcres are
+    // JailRegion/GreenAcresRegion here. ServUO-only classes like MondainRegion or
+    // BlackthornDungeon do not exist in ModernUO and would fail to deserialize.
+    public const string DefaultType = "BaseRegion";
+
+    public static readonly string[] RegionTypes =
+    {
+        "BaseRegion", "TownRegion", "DungeonRegion", "NoHousingRegion",
+        "GuardedRegion", "JailRegion", "GreenAcresRegion",
+    };
+
     public static string Export(IEnumerable<RegionDef> regions)
     {
         var opts = new JsonWriterOptions { Indented = true };
@@ -33,7 +46,7 @@ public static class ModernUoJson
             foreach (var r in regions.Where(r => r.Rects.Count > 0))
             {
                 w.WriteStartObject();
-                w.WriteString("$type", string.IsNullOrWhiteSpace(r.ServuoType) ? "Region" : r.ServuoType.Trim());
+                w.WriteString("$type", string.IsNullOrWhiteSpace(r.ServuoType) ? DefaultType : r.ServuoType.Trim());
                 w.WriteString("Map", Facets[Math.Clamp(r.MapPlane, 0, Facets.Length - 1)]);
                 w.WriteString("Name", r.Name ?? "");
                 w.WriteNumber("Priority", Math.Clamp(r.Priority, 0, 32767));
